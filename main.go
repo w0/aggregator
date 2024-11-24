@@ -38,6 +38,8 @@ func main() {
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerUsers)
 	cmds.register("agg", handlerAgg)
+	cmds.register("addfeed", handlerAddFeed)
+	cmds.register("feeds", handlerFeeds)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Must enter a command and the args.")
@@ -51,6 +53,11 @@ func main() {
 
 	if _, ok := cmds.cmds[cmd.name]; !ok {
 		log.Fatalf("Command: %s is not available.", cmd.name)
+	}
+
+	if cmd.name == "agg" {
+		cmd.arguments = make([]string, 1)
+		cmd.arguments[0] = "https://www.wagslane.dev/index.xml"
 	}
 
 	err = cmds.run(&s, cmd)

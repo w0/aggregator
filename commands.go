@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,8 +36,7 @@ func handlerLogin(s *state, cmd command) error {
 	_, err := s.db.GetUser(context.Background(), username)
 
 	if err != nil {
-		fmt.Printf("User: %s doesn't exist in the database.\n", username)
-		os.Exit(1)
+		return fmt.Errorf("user not found: %w\n", err)
 	}
 
 	err = s.cfg.SetUser(username)
@@ -67,8 +65,7 @@ func handlerRegister(s *state, cmd command) error {
 	})
 
 	if err != nil {
-		fmt.Printf("User: %s already exists in the database.\n", cmd.arguments[0])
-		os.Exit(1)
+		return fmt.Errorf("user already exists: %w\n", err)
 	}
 
 	err = s.cfg.SetUser(cmd.arguments[0])

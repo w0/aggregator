@@ -19,6 +19,14 @@ type commands struct {
 	cmds map[string]func(*state, command) error
 }
 
+func (c *commands) register(name string, f func(*state, command) error) {
+	c.cmds[name] = f
+}
+
+func (c *commands) run(s *state, cmd command) error {
+	return c.cmds[cmd.name](s, cmd)
+}
+
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
 		return fmt.Errorf("The login handler expects a single argument, the username.\n")
@@ -42,14 +50,6 @@ func handlerLogin(s *state, cmd command) error {
 	fmt.Printf("Set Username: %s\n", username)
 
 	return nil
-}
-
-func (c *commands) register(name string, f func(*state, command) error) {
-	c.cmds[name] = f
-}
-
-func (c *commands) run(s *state, cmd command) error {
-	return c.cmds[cmd.name](s, cmd)
 }
 
 func handlerRegister(s *state, cmd command) error {
@@ -128,15 +128,9 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
 		return fmt.Errorf("Usage: \"Name of Feed\" url..")
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-
-	if err != nil {
-		return err
 	}
 
 	now := time.Now()
@@ -184,15 +178,9 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
 		return fmt.Errorf("You must specify a url to follow")
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-
-	if err != nil {
-		return fmt.Errorf("Error getting user %w", err)
 	}
 
 	feed, err := s.db.GetFeedByUrl(context.Background(), cmd.arguments[0])
@@ -221,21 +209,14 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	username := s.cfg.CurrentUserName
-
-	user, err := s.db.GetUser(context.Background(), username)
-
-	if err != nil {
-		return fmt.Errorf("User %s not in database: %w", username, err)
-	}
+func handlerFollowing(s *state, cmd command, user database.User) error {
 
 	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
-		return fmt.Errorf("%s no follows. %w", username, err)
+		return fmt.Errorf("%s no follows. %w", user.Name, err)
 	}
 
-	fmt.Printf("%s is following:\n", username)
+	fmt.Printf("%s is following:\n", user.Name)
 	for _, v := range feeds {
 		fmt.Printf("\t * %s\n", v.FeedName)
 	}

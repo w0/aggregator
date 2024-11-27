@@ -12,7 +12,7 @@ func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) 
 	return func(s *state, cmd command) error {
 		user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 		if err != nil {
-			return fmt.Errorf("User %s not in database: %w", s.cfg.CurrentUserName, err)
+			return fmt.Errorf("user %s not in database: %w", s.cfg.CurrentUserName, err)
 		}
 
 		return handler(s, cmd, user)

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,7 +29,7 @@ func (c *commands) run(s *state, cmd command) error {
 
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("The login handler expects a single argument, the username.\n")
+		return fmt.Errorf("the login handler expects a single argument, the username")
 	}
 
 	username := cmd.arguments[0]
@@ -36,7 +37,7 @@ func handlerLogin(s *state, cmd command) error {
 	_, err := s.db.GetUser(context.Background(), username)
 
 	if err != nil {
-		return fmt.Errorf("user not found: %w\n", err)
+		return fmt.Errorf("user not found: %w", err)
 	}
 
 	err = s.cfg.SetUser(username)
@@ -52,7 +53,7 @@ func handlerLogin(s *state, cmd command) error {
 
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("The register handler expects a single argument, the username.\n")
+		return fmt.Errorf("the register handler expects a single argument, the username")
 	}
 
 	now := time.Now()
@@ -65,7 +66,7 @@ func handlerRegister(s *state, cmd command) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("user already exists: %w\n", err)
+		return fmt.Errorf("user already exists: %w", err)
 	}
 
 	err = s.cfg.SetUser(cmd.arguments[0])
@@ -112,22 +113,32 @@ func handlerUsers(s *state, cmd command) error {
 
 func handlerAgg(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("You must specify a url.")
+		return fmt.Errorf("specify a a duration 1s, 1m, 1h")
 	}
 
-	feed, err := fetchFeed(context.Background(), cmd.arguments[0])
+	timeBetweenRequests, err := time.ParseDuration(cmd.arguments[0])
 
 	if err != nil {
-		return fmt.Errorf("Failed fetching rss feed: %w", err)
+		return fmt.Errorf("failed to parse duration. %w", err)
 	}
 
-	fmt.Printf("Data: %v", feed)
-	return nil
+	fmt.Printf("Collecting feeds every %s\n", timeBetweenRequests)
+
+	// ticker controls request loop. Loop each time the specified duration is reached.
+	ticker := time.NewTicker(timeBetweenRequests)
+
+	for ; ; <-ticker.C {
+		err = scrapeFeeds(s)
+		if err != nil {
+			fmt.Printf("save erro: %v\n", err)
+		}
+	}
+
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("Usage: \"Name of Feed\" url..")
+		return fmt.Errorf("usage: \"Name of Feed\" url")
 	}
 
 	now := time.Now()
@@ -155,6 +166,10 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 			UserID:    user.ID,
 		})
 
+	if err != nil {
+		return fmt.Errorf("failed creating follow %w", err)
+	}
+
 	fmt.Printf("Feed: %s has been added for user %s\n", feed.Name, user.Name)
 	fmt.Printf("Data: %v", feed)
 
@@ -177,7 +192,7 @@ func handlerFeeds(s *state, cmd command) error {
 
 func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("You must specify a url to follow")
+		return fmt.Errorf("you must specify a url to follow")
 	}
 
 	feed, err := s.db.GetFeedByUrl(context.Background(), cmd.arguments[0])
@@ -223,7 +238,7 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 
 func handlerUnfollow(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("Please specify the feed url to unfollow.")
+		return fmt.Errorf("please specify the feed url to unfollow")
 	}
 
 	err := s.db.DeleteFeedFollow(context.Background(),
@@ -237,6 +252,42 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	}
 
 	fmt.Printf("unfollowed: %s", cmd.arguments[0])
+
+	return nil
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+
+	limit, err := func(args []string) (int, error) {
+		if len(args) > 0 {
+			return strconv.Atoi(args[0])
+		}
+		return 2, nil
+
+	}(cmd.arguments)
+
+	if err != nil {
+		return fmt.Errorf("failed to parse limit %w", err)
+	}
+
+	posts, err := s.db.GetPostsForUser(context.Background(),
+		database.GetPostsForUserParams{
+			UserID: user.ID,
+			Limit:  int32(limit),
+		})
+
+	if err != nil {
+		return fmt.Errorf("failed to fetch posts for user %w", err)
+	}
+
+	fmt.Printf("\n%s's latest posts\n\n", user.Name)
+	for _, v := range posts {
+		fmt.Printf("%s from %s\n", v.PublishedAt.Time.Format("Mon Jan 2"), v.FeedName)
+		fmt.Printf("--- %s ---\n", v.Title)
+		fmt.Printf("    %v\n", v.Description.String)
+		fmt.Printf("Link: %s\n", v.Url)
+		fmt.Println("=====================================")
+	}
 
 	return nil
 }

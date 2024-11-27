@@ -29,7 +29,7 @@ func (c *commands) run(s *state, cmd command) error {
 
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("the login handler expects a single argument, the username")
+		return fmt.Errorf("usage: aggregator login <username>")
 	}
 
 	username := cmd.arguments[0]
@@ -53,7 +53,7 @@ func handlerLogin(s *state, cmd command) error {
 
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("the register handler expects a single argument, the username")
+		return fmt.Errorf("usage: aggregator register <username>")
 	}
 
 	now := time.Now()
@@ -113,7 +113,7 @@ func handlerUsers(s *state, cmd command) error {
 
 func handlerAgg(s *state, cmd command) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("specify a a duration 1s, 1m, 1h")
+		return fmt.Errorf("usage: aggregator agg <1s>||<1m>||<1h>")
 	}
 
 	timeBetweenRequests, err := time.ParseDuration(cmd.arguments[0])
@@ -138,7 +138,7 @@ func handlerAgg(s *state, cmd command) error {
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("usage: \"Name of Feed\" url")
+		return fmt.Errorf("usage: aggregator addfeed <feed name> <url>")
 	}
 
 	now := time.Now()
@@ -192,7 +192,7 @@ func handlerFeeds(s *state, cmd command) error {
 
 func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("you must specify a url to follow")
+		return fmt.Errorf("usage: aggregator follow <url>")
 	}
 
 	feed, err := s.db.GetFeedByUrl(context.Background(), cmd.arguments[0])
@@ -225,7 +225,7 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 
 	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
-		return fmt.Errorf("%s no follows. %w", user.Name, err)
+		return fmt.Errorf("%s not following any feeds %w", user.Name, err)
 	}
 
 	fmt.Printf("%s is following:\n", user.Name)
@@ -238,7 +238,7 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 
 func handlerUnfollow(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("please specify the feed url to unfollow")
+		return fmt.Errorf("usage: aggregator unfollow <url>")
 	}
 
 	err := s.db.DeleteFeedFollow(context.Background(),

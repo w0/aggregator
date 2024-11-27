@@ -46,7 +46,7 @@ func main() {
 	cmds.register("browse", middlewareLoggedIn(handlerBrowse))
 
 	if len(os.Args) < 2 {
-		fmt.Println("Must enter a command and the args.")
+		fmt.Println(usage(cmds.cmds))
 		return
 	}
 
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	if _, ok := cmds.cmds[cmd.name]; !ok {
-		log.Fatalf("Command: %s is not available.", cmd.name)
+		log.Fatal(usage(cmds.cmds))
 	}
 
 	err = cmds.run(&s, cmd)

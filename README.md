@@ -15,7 +15,7 @@ brew install postgresql@15 go
 
 ## Install gator
 
-Run the following cmds to install aggregator into your $GOPATH
+Run the following commands to install aggregator into your $GOPATH
 
 ```Shell
 git clone https://github.com/w0/aggregator.git
@@ -25,7 +25,7 @@ go install
 
 ## PostgreSQL setup
 
-On macos. Assuming you installed with homebrew.
+On macos, assuming following the previous instructions to install PostgreSQL. You can run the following commands to setup the database.
 
 Start by link postgresql into your path, enable the service and creating the db "gator".
 

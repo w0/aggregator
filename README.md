@@ -25,9 +25,9 @@ go install
 
 ## PostgreSQL setup
 
-On macos, assuming following the previous instructions to install PostgreSQL. You can run the following commands to setup the database.
+On macos, assuming you followed the previous instructions to install PostgreSQL, you can run the following commands to set up the database.
 
-Start by link postgresql into your path, enable the service and creating the db "gator".
+Start by linking postgresql into your path. Enable the service and create the db "gator".
 
 ```Shell
 brew link postgresql@15 --force
@@ -37,8 +37,7 @@ createdb "gator"
 
 ```
 
-Now that you have created the database.
-Lets perform a migration so it is setup like `aggregator` expects.
+Now that you have created the database, lets perform a migration so it is set up like `aggregator` expects.
 
 ```Shell
 # Install Goose
@@ -73,10 +72,10 @@ EOF
 usage: aggregator command <arguments>
 	commands:
 		unfollow  stop following a feed.
-		reset     resets the database. Danger this remove all data.
+		reset     resets the database. Note: this removes all data.
 		users     list all registered users.
 		feeds     list all available rss feeds.
-		addfeed   add a rss feed to follow.
+		addfeed   add an rss feed to follow.
 		follow    follow a feed added by a different user.
 		following list feeds you are following.
 		browse    list content from saved feeds.
